@@ -9,7 +9,13 @@ export const getalltodo = (
   response: Response,
   next: NextFunction
 ) => {
-  return todoRepository.find({where: { User: request['user'].id } });
+try {
+    return response.json({
+      todo: todoRepository.find({ where: { User: request["user"].id } }),
+    });
+} catch (error) {
+  response.status(500).json({ message: error.message });
+}
 };
 
 export const getonetodo = async (
@@ -17,16 +23,20 @@ export const getonetodo = async (
   response: Response,
   next: NextFunction
 ) => {
-  const id = parseInt(request.params.id);
+try {
+    const id = parseInt(request.params.id);
 
-  const user = await todoRepository.findOne({
-    where: { id },
-  });
+    const user = await todoRepository.findOne({
+      where: { id },
+    });
 
-  if (!user) {
-    return "not found todo";
-  }
-  return user;
+    if (!user) {
+      return response.send("not found todo");
+    }
+    return response.json({ user });
+} catch (error) {
+  response.status(500).json({ message: error.message });
+}
 };
 
 export const createtodo = async (
@@ -34,14 +44,8 @@ export const createtodo = async (
   response: Response,
   next: NextFunction
 ) => {
-  let {
-    title,
-    description,
-    status,
-    priority,
-    dueDate,
-
-  } = request.body;
+try {
+    let { title, description, status, priority, dueDate } = request.body;
 
     const user = await todoRepository.create({
       title,
@@ -49,18 +53,19 @@ export const createtodo = async (
       status,
       priority,
       dueDate,
- 
-     
     });
     user.createdAt = new Date(Date.now());
     console.log(request["user"].id);
-    
-user.User = request["user"].id;
-  const todo = await todoRepository.save(user);
 
-  return response.json({
-    todo:todo,
-  });
+    user.User = request["user"].id;
+    const todo = await todoRepository.save(user);
+
+    return response.json({
+      todo: todo,
+    });
+} catch (error) {
+  response.status(500).json({ message: error.message });
+}
 };
 
 export const deletetodo = async (
@@ -68,17 +73,21 @@ export const deletetodo = async (
   response: Response,
   next: NextFunction
 ) => {
-  const id = parseInt(request.params.id);
+try {
+    const id = parseInt(request.params.id);
 
-  let userToRemove = await todoRepository.findOneBy({ id });
+    let userToRemove = await todoRepository.findOneBy({ id });
 
-  if (!userToRemove) {
-    return "this user not exist";
-  }
+    if (!userToRemove) {
+      return response.send("this user not exist");
+    }
 
-  await todoRepository.remove(userToRemove);
+  await todoRepository.delete({ id: userToRemove.id });
 
-  return "user has been removed";
+    return response.send("user has been removed");
+} catch (error) {
+  response.status(500).json({ message: error.message });
+}
 };
 
 
@@ -87,8 +96,18 @@ export const updatetodo = async (
   response: Response,
   next: NextFunction
 ) => {
-  const updatetod = await todoRepository.update(
-    parseInt(request.params.id),
-    request.body
-  );
+  console.log("hi");
+  
+  try {
+    const object = Object.assign({ updatedAt: new Date(Date.now()) }, request.body);
+    console.log(object);
+    
+    const updatetod = await todoRepository.update(
+      parseInt(request.params.id),
+      object
+    );
+    response.json({ message: "todo updated successfully" });
+} catch (error) {
+ response.status(500).json({ message: error.message });
+}
 };

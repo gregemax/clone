@@ -7,7 +7,9 @@ import * as dotenv from "dotenv";
 import router from "./router/userrouter";
 import { login } from "./controller/usercontroller";
 import Todo from "./router/todorouter";
- import * as cors from "cors";
+import cors from "cors";
+import swggerUi from "swagger-ui-express";
+import  swggerjsdoc  from  "swagger-jsdoc"
 dotenv.config({ path: "./.env" });
 
 process.on("uncaughtException", (err) => {
@@ -16,10 +18,27 @@ process.on("uncaughtException", (err) => {
   process.exit(1);
 });
 
-
+const swaggerOptions = {
+  swaggerDefinition: {
+    openapi: "3.0.2",
+    info: {
+      version: "1.0.0",
+      title: "Todo API",
+      discription: "A simple todo API",
+      contact: {
+        name: "greg",
+      },
+      server: ["http://localhost:4000/"],
+    },
+    schemas: ["http", "https"],
+  },
+  apis: ["./dist/**/*.js"],
+};
 AppDataSource
 const app = express();
 app.use(cors());
+const swaggerDocs = swggerjsdoc(swaggerOptions);
+app.use("/api-docs", swggerUi.serve, swggerUi.setup(swaggerDocs))
 app.use(
   cors({
     origin: "*", 
@@ -42,7 +61,7 @@ app.use("*", handle);
 app.listen(4000, () => {
     
     console.log(
-      "Express server has started on port 3000. Open http://localhost:3000/users to see results"
+      "Express server has started on port 4000"
     );
 });
 

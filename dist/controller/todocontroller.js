@@ -17,49 +17,80 @@ const db_1 = __importDefault(require("../db"));
 const todo_1 = require("../entity/todo");
 const todoRepository = db_1.default.getRepository(todo_1.todo);
 const getalltodo = (request, response, next) => {
-    return todoRepository.find({ where: { User: request['user'].id } });
+    try {
+        return response.json({
+            todo: todoRepository.find({ where: { User: request["user"].id } }),
+        });
+    }
+    catch (error) {
+        response.status(500).json({ message: error.message });
+    }
 };
 exports.getalltodo = getalltodo;
 const getonetodo = (request, response, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const id = parseInt(request.params.id);
-    const user = yield todoRepository.findOne({
-        where: { id },
-    });
-    if (!user) {
-        return "not found todo";
+    try {
+        const id = parseInt(request.params.id);
+        const user = yield todoRepository.findOne({
+            where: { id },
+        });
+        if (!user) {
+            return response.send("not found todo");
+        }
+        return response.json({ user });
     }
-    return user;
+    catch (error) {
+        response.status(500).json({ message: error.message });
+    }
 });
 exports.getonetodo = getonetodo;
 const createtodo = (request, response, next) => __awaiter(void 0, void 0, void 0, function* () {
-    let { title, description, status, priority, dueDate, } = request.body;
-    const user = yield todoRepository.create({
-        title,
-        description,
-        status,
-        priority,
-        dueDate,
-    });
-    user.createdAt = new Date(Date.now());
-    console.log(request["user"].id);
-    user.User = request["user"].id;
-    const todo = yield todoRepository.save(user);
-    return response.json({
-        todo: todo,
-    });
+    try {
+        let { title, description, status, priority, dueDate } = request.body;
+        const user = yield todoRepository.create({
+            title,
+            description,
+            status,
+            priority,
+            dueDate,
+        });
+        user.createdAt = new Date(Date.now());
+        console.log(request["user"].id);
+        user.User = request["user"].id;
+        const todo = yield todoRepository.save(user);
+        return response.json({
+            todo: todo,
+        });
+    }
+    catch (error) {
+        response.status(500).json({ message: error.message });
+    }
 });
 exports.createtodo = createtodo;
 const deletetodo = (request, response, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const id = parseInt(request.params.id);
-    let userToRemove = yield todoRepository.findOneBy({ id });
-    if (!userToRemove) {
-        return "this user not exist";
+    try {
+        const id = parseInt(request.params.id);
+        let userToRemove = yield todoRepository.findOneBy({ id });
+        if (!userToRemove) {
+            return response.send("this user not exist");
+        }
+        yield todoRepository.delete({ id: userToRemove.id });
+        return response.send("user has been removed");
     }
-    yield todoRepository.remove(userToRemove);
-    return "user has been removed";
+    catch (error) {
+        response.status(500).json({ message: error.message });
+    }
 });
 exports.deletetodo = deletetodo;
 const updatetodo = (request, response, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const updatetod = yield todoRepository.update(parseInt(request.params.id), request.body);
+    console.log("hi");
+    try {
+        const object = Object.assign({ updatedAt: new Date(Date.now()) }, request.body);
+        console.log(object);
+        const updatetod = yield todoRepository.update(parseInt(request.params.id), object);
+        response.json({ message: "todo updated successfully" });
+    }
+    catch (error) {
+        response.status(500).json({ message: error.message });
+    }
 });
 exports.updatetodo = updatetodo;

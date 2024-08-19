@@ -5,12 +5,12 @@ import * as bcrypt from "bcrypt";
 import * as jwt from "jsonwebtoken";
 import AppDataSource from "../db";
 const userRepository = AppDataSource.getRepository(User);
-export const all = (
+export const all = async (
   request: Request,
   response: Response,
   next: NextFunction
 ) => {
-  return userRepository.find();
+  return response.json( await userRepository.find());
 };
 
 export const one = async (
@@ -18,16 +18,20 @@ export const one = async (
   response: Response,
   next: NextFunction
 ) => {
-  const id = parseInt(request.params.id);
+try {
+    const id = parseInt(request.params.id);
 
-  const user = await userRepository.findOne({
-    where: { id },
-  });
+    const user = await userRepository.findOne({
+      where: { id },
+    });
 
-  if (!user) {
-    return "unregistered user";
-  }
-  return user;
+    if (!user) {
+      return "unregistered user";
+    }
+    return response.json(user);
+} catch (error) {
+  response.status(500).json({ message: error.message });
+}
 };
 
 export const save = async (
@@ -38,13 +42,13 @@ export const save = async (
   try {
     let { name, password, confirmpassword, email } = request.body;
     if (password != confirmpassword) {
-      response.json({
+      return response.json({
         message: `  password must match confirm password`,
       });
     }
 
     if (!name && !password && !email) {
-      response.json({
+      return response.json({
         message: `please provide name, password, email`,
       });
     }
@@ -60,12 +64,12 @@ export const save = async (
       { expiresIn: "1h" }
     );
 
-    return response.json({
+    return  response.json({
       token,
       saveduser,
     });
   } catch (error) {
-    response.status(500).json({ message: error.message });
+    return response.status(500).json({ message: error.message });
   }
 };
 
@@ -74,28 +78,32 @@ export const del = async (
   response: Response,
   next: NextFunction
 ) => {
-  const id = parseInt(request.params.id);
+try {
+    const id = parseInt(request.params.id);
 
-  let userToRemove = await userRepository.findOneBy({ id });
+    let userToRemove = await userRepository.findOneBy({ id });
 
-  if (!userToRemove) {
-    return "this user not exist";
-  }
+    if (!userToRemove) {
+      return response.send("this user not exist");
+    }
 
-  await userRepository.remove(userToRemove);
+    await userRepository.delete({ id: userToRemove.id });
 
-  return "user has been removed";
+    return response.json({ message: "user has been removed" });
+} catch (error) {
+  response.status(500).json({ message: error.message });
+}
 };
 
-export const login = async (
+export const login = async ( 
   request: Request,
-  response: Response,
+  response: Response, 
   next: NextFunction
 ) => {
   try {
     const { email, password } = request.body;
     if (!email && !password) {
-      response.json({
+      return response.json({
         message: ` enter email or password`,
       });
     }
@@ -105,13 +113,13 @@ export const login = async (
      
     } as any);
     if (!user) {
-      response.json({
+      return response.json({
         message: "no user found with this email ",
       });
     }
     const veifypassword = bcrypt.compare(password, user.password);
     if (!veifypassword) {
-      response.json({
+      return response.json({
         message: "please enter a correct password ",
       });
     }
@@ -125,11 +133,11 @@ export const login = async (
       { expiresIn: "3d" }
     );
 
-    response.json({
+    return response.json({
       token,
       user,
     });
   } catch (error) {
-    response.status(500).json({ message: error.message });
+    return response.status(500).json({ message: error.message });
   }
 };

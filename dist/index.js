@@ -42,16 +42,36 @@ const dotenv = __importStar(require("dotenv"));
 const userrouter_1 = __importDefault(require("./router/userrouter"));
 const usercontroller_1 = require("./controller/usercontroller");
 const todorouter_1 = __importDefault(require("./router/todorouter"));
-const cors = __importStar(require("cors"));
+const cors_1 = __importDefault(require("cors"));
+const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
+const swagger_jsdoc_1 = __importDefault(require("swagger-jsdoc"));
 dotenv.config({ path: "./.env" });
 process.on("uncaughtException", (err) => {
     console.log(err["message"] || err);
     process.exit(1);
 });
+const swaggerOptions = {
+    swaggerDefinition: {
+        openapi: "3.0.2",
+        info: {
+            version: "1.0.0",
+            title: "Todo API",
+            discription: "A simple todo API",
+            contact: {
+                name: "greg",
+            },
+            server: ["http://localhost:4000/"],
+        },
+        schemas: ["http", "https"],
+    },
+    apis: ["./dist/**/*.js"],
+};
 db_1.default;
 const app = (0, express_1.default)();
-app.use(cors());
-app.use(cors({
+app.use((0, cors_1.default)());
+const swaggerDocs = (0, swagger_jsdoc_1.default)(swaggerOptions);
+app.use("/api-docs", swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swaggerDocs));
+app.use((0, cors_1.default)({
     origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -63,7 +83,7 @@ app.post("user/login", usercontroller_1.login);
 app.get("/users", (req, res) => __awaiter(void 0, void 0, void 0, function* () { }));
 app.use("*", error_midd_1.handle);
 app.listen(4000, () => {
-    console.log("Express server has started on port 3000. Open http://localhost:3000/users to see results");
+    console.log("Express server has started on port 4000");
 });
 process.on("unhandledRejection", (err) => {
     console.log(err["message"] || err);

@@ -41,31 +41,36 @@ const bcrypt = __importStar(require("bcrypt"));
 const jwt = __importStar(require("jsonwebtoken"));
 const db_1 = __importDefault(require("../db"));
 const userRepository = db_1.default.getRepository(user_1.User);
-const all = (request, response, next) => {
-    return userRepository.find();
-};
+const all = (request, response, next) => __awaiter(void 0, void 0, void 0, function* () {
+    return response.json(yield userRepository.find());
+});
 exports.all = all;
 const one = (request, response, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const id = parseInt(request.params.id);
-    const user = yield userRepository.findOne({
-        where: { id },
-    });
-    if (!user) {
-        return "unregistered user";
+    try {
+        const id = parseInt(request.params.id);
+        const user = yield userRepository.findOne({
+            where: { id },
+        });
+        if (!user) {
+            return "unregistered user";
+        }
+        return response.json(user);
     }
-    return user;
+    catch (error) {
+        response.status(500).json({ message: error.message });
+    }
 });
 exports.one = one;
 const save = (request, response, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         let { name, password, confirmpassword, email } = request.body;
         if (password != confirmpassword) {
-            response.json({
+            return response.json({
                 message: `  password must match confirm password`,
             });
         }
         if (!name && !password && !email) {
-            response.json({
+            return response.json({
                 message: `please provide name, password, email`,
             });
         }
@@ -82,25 +87,30 @@ const save = (request, response, next) => __awaiter(void 0, void 0, void 0, func
         });
     }
     catch (error) {
-        response.status(500).json({ message: error.message });
+        return response.status(500).json({ message: error.message });
     }
 });
 exports.save = save;
 const del = (request, response, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const id = parseInt(request.params.id);
-    let userToRemove = yield userRepository.findOneBy({ id });
-    if (!userToRemove) {
-        return "this user not exist";
+    try {
+        const id = parseInt(request.params.id);
+        let userToRemove = yield userRepository.findOneBy({ id });
+        if (!userToRemove) {
+            return response.send("this user not exist");
+        }
+        yield userRepository.delete({ id: userToRemove.id });
+        return response.json({ message: "user has been removed" });
     }
-    yield userRepository.remove(userToRemove);
-    return "user has been removed";
+    catch (error) {
+        response.status(500).json({ message: error.message });
+    }
 });
 exports.del = del;
 const login = (request, response, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email, password } = request.body;
         if (!email && !password) {
-            response.json({
+            return response.json({
                 message: ` enter email or password`,
             });
         }
@@ -108,13 +118,13 @@ const login = (request, response, next) => __awaiter(void 0, void 0, void 0, fun
             where: { email },
         });
         if (!user) {
-            response.json({
+            return response.json({
                 message: "no user found with this email ",
             });
         }
         const veifypassword = bcrypt.compare(password, user.password);
         if (!veifypassword) {
-            response.json({
+            return response.json({
                 message: "please enter a correct password ",
             });
         }
@@ -122,13 +132,13 @@ const login = (request, response, next) => __awaiter(void 0, void 0, void 0, fun
             userId: user.id,
             userEmail: user.email,
         }, process.env.jwtsecret || "secret", { expiresIn: "3d" });
-        response.json({
+        return response.json({
             token,
             user,
         });
     }
     catch (error) {
-        response.status(500).json({ message: error.message });
+        return response.status(500).json({ message: error.message });
     }
 });
 exports.login = login;
