@@ -42,7 +42,7 @@ app.use("/api-docs", swggerUi.serve, swggerUi.setup(swaggerDocs))
 app.use(
   cors({
     origin: "*", 
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"], 
   })
 );
